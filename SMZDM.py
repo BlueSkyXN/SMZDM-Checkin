@@ -1,16 +1,43 @@
-# -*- coding: utf8 -*-
+import requests 
+from bs4 import BeautifulSoup
+import time
+import re
+import rsa
+import base64
+import hashlib
+import os
+import sys
+import json
 
-import requests, json, time, os, sys
 sys.path.append('.')
 requests.packages.urllib3.disable_warnings()
 try:
     from pusher import pusher
 except:
     pass
+from urllib import parse
 
-cookie = os.environ.get("cookie_smzdm")
+result = '🏆什么值得买签到姬🏆\n'
+
+cookie = os.environ.get("cookie")
+TGBOTAPI = os.environ.get("TGBOTAPI")
+TGID = os.environ.get("TGID")
+
+def pushtg(data):
+    global TGBOTAPI
+    global TGID
+    requests.post(
+        'https://api.telegram.org/bot'+TGBOTAPI+'/sendMessage?chat_id='+TGID+'&text='+data)
+
+# 【BOTAPI】格式为123456:abcdefghi
+# 【TGID】格式为123456（人）或者-100123456（群组/频道）
+
+
+
+
 
 def main(*arg):
+    global result
     try:
         msg = ""
         s = requests.Session()
@@ -28,14 +55,18 @@ def main(*arg):
         if r.json()["error_code"] != 0:
             pusher("smzdm  Cookie过期", r.text[:200])
             msg += "smzdm cookie失效"
+            result += "cookie失效"
         else:
             msg += "smzdm签到成功"
+            result += "签到成功"
     except Exception as e:
         print('repr(e):', repr(e))
         msg += '运行出错,repr(e):'+repr(e)
+        result += "运行出错"
     return msg + "\n"
 
 def smzdm_pc(*arg):
+    global result
     msg = ""
     global cookie
     if "\\n" in cookie:
@@ -50,10 +81,18 @@ def smzdm_pc(*arg):
         i += 1
     return msg
 
+
 if __name__ == "__main__":
     if cookie:
         print("----------什么值得买开始尝试签到----------")
         smzdm_pc()
         print("----------什么值得买签到执行完毕----------")
+        pushtg(result)
 
     
+def main_handler(event, context):
+    if cookie:
+        print("----------什么值得买开始尝试签到----------")
+        smzdm_pc()
+        print("----------什么值得买签到执行完毕----------")
+        pushtg(result)
